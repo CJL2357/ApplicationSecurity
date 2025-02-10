@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using WebApplication1.Model;
 
@@ -41,7 +42,7 @@ public class ResetPasswordRequestModel : PageModel
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
         // Create the reset link without the email
-        var resetLink = Url.Page("/ResetPassword", null, new { token = token }, Request.Scheme);
+        var resetLink = UrlEncoder.Default.Encode(Url.Page("/ResetPassword", null, new { token = token }, Request.Scheme));
 
         // Send the email
         await _emailSender.SendEmailAsync(Email, "Reset Password", $"Please reset your password by clicking here: <a href='{resetLink}'>Reset your password</a>");
