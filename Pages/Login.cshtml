@@ -4,52 +4,42 @@
 }
 
 
-<div class="container mt-5">
-    <div class="row justify-content-center align-items-center">
-        <div class="col-sm-12 col-md-12 col-lg-4">
-            <h1 class="mb-3">Login</h1>
+<form method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken() <!-- Add this line for CSRF protection -->
+    <div asp-validation-summary="All" class="text-danger"></div>
 
-            <form method="post" enctype="multipart/form-data">
-                @Html.AntiForgeryToken() <!-- Add this line for CSRF protection -->
-                <div asp-validation-summary="All" class="text-danger"></div>
-
-                <div class="mb-3">
-                    <label class="form-label" asp-for="LModel.Email">Email Address</label>
-                    <input type="email" asp-for="LModel.Email" class="form-control" required />
-                    <span asp-validation-for="LModel.Email" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label" asp-for="LModel.Password">Password</label>
-                    <input type="password" asp-for="LModel.Password" class="form-control" required />
-                    <span asp-validation-for="LModel.Password" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3 form-check">
-                    <input type="checkbox" asp-for="LModel.RememberMe" class="form-check-input" />
-                    <label class="form-check-label" asp-for="LModel.RememberMe">Remember Me?</label>
-                </div>
-
-                <div class="mb-3">
-                    <button type="submit" class="btn btn-primary">Login</button>
-                </div>
-            </form>
-
-            <!-- Forgot Password Button -->
-            <div class="mb-3">
-                <a href="/ResetPasswordRequest" class="btn btn-link">Forgot Password?</a>
-            </div>
-        </div>
+    <div class="mb-3">
+        <label class="form-label" asp-for="LModel.Email">Email Address</label>
+        <input type="email" asp-for="LModel.Email" class="form-control" required />
+        <span asp-validation-for="LModel.Email" class="text-danger"></span>
     </div>
-</div>
+
+    <div class="mb-3">
+        <label class="form-label" asp-for="LModel.Password">Password</label>
+        <input type="password" asp-for="LModel.Password" class="form-control" required />
+        <span asp-validation-for="LModel.Password" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" asp-for="LModel.RememberMe" class="form-check-input" />
+        <label class="form-check-label" asp-for="LModel.RememberMe">Remember Me?</label>
+    </div>
+
+    <!-- Hidden input for reCAPTCHA response -->
+    <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response" />
+
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary">Login</button>
+    </div>
+</form>
 
 
-@*  <script src="https://www.google.com/recaptcha/api.js?render=6Lc9xNIqAAAAAAjTERenEdbFn8Vq5Jl7JpPUVR1L"></script>
- <script>
-     grecaptcha.ready(function () {
-         grecaptcha.execute('YOUR_SITE_KEY', { action: 'login' }).then(function (token) {
-             document.getElementById('g-recaptcha-response').value = token;
-         });
-     });
- </script> *@
+<script src="https://www.google.com/recaptcha/api.js?render=@Model._recaptchaSiteKey"></script>
+<script>
+    grecaptcha.ready(function () {
+        grecaptcha.execute('@Model._recaptchaSiteKey', { action: 'login' }).then(function (token) {
+            document.getElementById('g-recaptcha-response').value = token;
+        });
+    });
+</script>
  

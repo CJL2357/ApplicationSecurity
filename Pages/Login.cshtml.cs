@@ -2,14 +2,16 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging; // For logging
+using Microsoft.Extensions.Configuration; // For configuration
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using WebApplication1.Model;
-using WebApplication1.Services; // Add this for EncryptionService
+using WebApplication1.Services; // For EncryptionService
 using WebApplication1.ViewModels;
-// using System.Net.Http; // Commented out for reCAPTCHA
-// using System.Text.Json; // Commented out for reCAPTCHA
+using System.Net.Http; // For reCAPTCHA
+using System.Text.Json; // For reCAPTCHA
 
 namespace WebApplication1.Pages
 {
@@ -19,44 +21,47 @@ namespace WebApplication1.Pages
         public Login LModel { get; set; }
 
         private readonly SignInManager<ApplicationUser> signInManager;
-        private readonly EmailSender emailSender; // Inject EmailSender
-        private readonly EncryptionService encryptionService; // Inject EncryptionService
-        private readonly AuditService auditService; // Inject AuditService
-        // private readonly IHttpClientFactory _httpClientFactory; // Commented out for reCAPTCHA
-        // private readonly string _recaptchaSecret = "6Lc9xNIqAAAAALYRKkqFGzyU7ycI5KCBvkrf8dJ5"; // Commented out for reCAPTCHA
+        private readonly EmailSender emailSender;
+        private readonly EncryptionService encryptionService;
+        private readonly AuditService auditService;
+        private readonly IHttpClientFactory _httpClientFactory; // For reCAPTCHA
+        private readonly string _recaptchaSecret; // Secret key from configuration
+        public readonly string _recaptchaSiteKey;
+        private readonly ILogger<LoginModel> _logger; // Logger
 
-        public LoginModel(SignInManager<ApplicationUser> signInManager, EmailSender emailSender, EncryptionService encryptionService, AuditService auditService /*, IHttpClientFactory httpClientFactory */)
+        public LoginModel(SignInManager<ApplicationUser> signInManager, EmailSender emailSender, EncryptionService encryptionService, AuditService auditService, IHttpClientFactory httpClientFactory, ILogger<LoginModel> logger, IConfiguration configuration)
         {
             this.signInManager = signInManager;
-            this.emailSender = emailSender; // Initialize EmailSender
-            this.encryptionService = encryptionService; // Initialize EncryptionService
-            this.auditService = auditService; // Initialize AuditService
-            // _httpClientFactory = httpClientFactory; // Commented out for reCAPTCHA
+            this.emailSender = emailSender;
+            this.encryptionService = encryptionService;
+            this.auditService = auditService;
+            _httpClientFactory = httpClientFactory; // Initialize the IHttpClientFactory
+            _logger = logger; // Initialize the logger
+
+            // Read the secret key from the configuration
+            _recaptchaSecret = configuration["Recaptcha:SecretKey"];
+            _recaptchaSiteKey = configuration["Recaptcha:SiteKey"];
+
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (ModelState.IsValid)
             {
-                // Commented out reCAPTCHA validation
-                // var recaptchaResponse = Request.Form["g-recaptcha-response"];
-                // var isValidCaptcha = await ValidateCaptcha(recaptchaResponse);
-                // if (!isValidCaptcha)
-                // {
-                //     ModelState.AddModelError("", "Please complete the reCAPTCHA.");
-                //     return Page();
-                // }
+                var recaptchaResponse = Request.Form["g-recaptcha-response"];
+                var isValidCaptcha = await ValidateCaptcha(recaptchaResponse);
+                if (!isValidCaptcha)
+                {
+                    ModelState.AddModelError("", "Please complete the reCAPTCHA.");
+                    return Page();
+                }
 
                 // Retrieve the user to check for lockout
                 var user = await signInManager.UserManager.FindByEmailAsync(LModel.Email);
-                if (user != null)
+                if (user != null && await signInManager.UserManager.IsLockedOutAsync(user))
                 {
-                    // Check if the user is locked out
-                    if (await signInManager.UserManager.IsLockedOutAsync(user))
-                    {
-                        ModelState.AddModelError("", "Your account is locked out. Please try again later.");
-                        return Page();
-                    }
+                    ModelState.AddModelError("", "Your account is locked out. Please try again later.");
+                    return Page();
                 }
 
                 // Attempt to sign in the user
@@ -66,19 +71,13 @@ namespace WebApplication1.Pages
                     // Check if the user has 2FA enabled
                     if (user != null && await signInManager.UserManager.GetTwoFactorEnabledAsync(user))
                     {
-                        // Generate the 2FA code and send it via email
                         var code = await signInManager.UserManager.GenerateTwoFactorTokenAsync(user, "Email");
                         await emailSender.SendEmailAsync(LModel.Email, "Your 2FA Code", $"Your code is: {code}");
-
-                        // Redirect to the 2FA verification page
                         return RedirectToPage("VerifyTwoFactor", new { email = LModel.Email });
                     }
 
                     // Log successful login
-                    if (user != null)
-                    {
-                        await auditService.LogUserActivity(user.UserName, "User  logged in successfully.");
-                    }
+                    await auditService.LogUserActivity(user.UserName, "User  logged in successfully.");
 
                     // Generate a new session ID
                     var newSessionId = Guid.NewGuid().ToString();
@@ -88,7 +87,6 @@ namespace WebApplication1.Pages
                     var updateResult = await signInManager.UserManager.UpdateAsync(user);
                     if (!updateResult.Succeeded)
                     {
-                        // Handle update failure (e.g., log the error)
                         ModelState.AddModelError("", "Failed to update session ID.");
                         return Page();
                     }
@@ -127,25 +125,48 @@ namespace WebApplication1.Pages
             return Page();
         }
 
-        // Commented out reCAPTCHA validation method
-        // private async Task<bool> ValidateCaptcha(string captchaResponse)
-        // {
-        //     //     var client = _httpClientFactory.CreateClient();
-        //     var response = await client.GetAsync($"https://www.google.com/recaptcha/api/siteverify?secret={_recaptchaSecret}&response={captchaResponse}");
-        //     var jsonResponse = await response.Content.ReadAsStringAsync();
-        //     var captchaResult = JsonSerializer.Deserialize<RecaptchaResponse>(jsonResponse);
-        //
-        //     return captchaResult.Success && captchaResult.Score >= 0.5; // Adjust score threshold as needed
-        // }
+        private async Task<bool> ValidateCaptcha(string captchaResponse)
+        {
+            _logger.LogInformation("ValidateCaptcha called."); // Log method execution
 
-        // private class RecaptchaResponse
-        // {
-        //     public bool Success { get; set; }
-        //     public float Score { get; set; }
-        //     public string Action { get; set; }
-        //     public string ChallengeTs { get; set; }
-        //     public string Hostname { get; set; }
-        // }
+            var client = _httpClientFactory.CreateClient();
+            var response = await client.GetAsync($"https://www.google.com/recaptcha/api/siteverify?secret={_recaptchaSecret}&response={captchaResponse}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Error calling reCAPTCHA API.");
+                return false;
+            }
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("reCAPTCHA API Response: " + jsonResponse); // Log the full response
+
+            RecaptchaResponse captchaResult;
+            try
+            {
+                captchaResult = JsonSerializer.Deserialize<RecaptchaResponse>(jsonResponse);
+            }
+            catch (JsonException)
+            {
+                _logger.LogError("Error deserializing reCAPTCHA response.");
+                return false;
+            }
+
+            // Log the score and success status
+            _logger.LogInformation($"reCAPTCHA Success: {captchaResult.success}, Score: {captchaResult.score}");
+
+            // Use the score to determine if the login should proceed
+            return captchaResult.success && captchaResult.score >= 0.5; // Adjust score threshold as needed
+        }
+
+        private class RecaptchaResponse
+        {
+            public bool success { get; set; }
+            public float score { get; set; }
+            public string action { get; set; }
+            public string challenge_ts { get; set; }
+            public string hostname { get; set; }
+        }
 
         public void OnGet()
         {
