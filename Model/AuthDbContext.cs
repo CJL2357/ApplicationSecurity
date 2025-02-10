@@ -16,6 +16,8 @@ namespace WebApplication1.Model
         // DbSet for PasswordHistory
         public DbSet<PasswordHistory> PasswordHistories { get; set; } // Add this line
 
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; } // Add this line
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -23,22 +25,28 @@ namespace WebApplication1.Model
             // Configure the AuditLog entity
             modelBuilder.Entity<AuditLog>()
                 .Property(a => a.UserName)
-                .IsRequired(); // Make UserName required
+                .IsRequired(); 
 
             modelBuilder.Entity<AuditLog>()
                 .Property(a => a.Action)
-                .IsRequired(); // Make Action required
+                .IsRequired(); 
 
             modelBuilder.Entity<AuditLog>()
                 .Property(a => a.Timestamp)
-                .HasDefaultValueSql("GETUTCDATE()"); // Set default value for Timestamp
+                .HasDefaultValueSql("GETUTCDATE()"); 
 
             // Configure the PasswordHistory entity
             modelBuilder.Entity<PasswordHistory>()
                 .HasOne(ph => ph.User)
                 .WithMany(u => u.PasswordHistories)
                 .HasForeignKey(ph => ph.UserId)
-                .OnDelete(DeleteBehavior.Cascade); // Optional: Configure delete behavior
+                .OnDelete(DeleteBehavior.Cascade); 
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasOne(prt => prt.User)
+                .WithMany() 
+                .HasForeignKey(prt => prt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

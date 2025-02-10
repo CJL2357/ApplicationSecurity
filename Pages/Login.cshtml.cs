@@ -23,7 +23,7 @@ namespace WebApplication1.Pages
         private readonly EncryptionService encryptionService; // Inject EncryptionService
         private readonly AuditService auditService; // Inject AuditService
         // private readonly IHttpClientFactory _httpClientFactory; // Commented out for reCAPTCHA
-        // private readonly string _recaptchaSecret = "YOUR_SECRET_KEY"; // Commented out for reCAPTCHA
+        // private readonly string _recaptchaSecret = "6Lc9xNIqAAAAALYRKkqFGzyU7ycI5KCBvkrf8dJ5"; // Commented out for reCAPTCHA
 
         public LoginModel(SignInManager<ApplicationUser> signInManager, EmailSender emailSender, EncryptionService encryptionService, AuditService auditService /*, IHttpClientFactory httpClientFactory */)
         {
