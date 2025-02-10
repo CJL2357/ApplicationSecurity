@@ -1,0 +1,66 @@
+﻿@page
+@model WebApplication1.Pages.IndexModel
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h1>Welcome to the Homepage</h1>
+
+@if (Model.FirstName != null)
+{
+    <p><strong>First Name:</strong> @Model.FirstName</p>
+}
+else
+{
+    <p>No First Name found.</p>
+}
+
+@if (Model.LastName != null)
+{
+    <p><strong>Last Name:</strong> @Model.LastName</p>
+}
+else
+{
+    <p>No Last Name found.</p>
+}
+
+@if (Model.Gender != null)
+{
+    <p><strong>Gender:</strong> @Model.Gender</p>
+}
+else
+{
+    <p>No Gender found.</p>
+}
+
+@if (Model.DecryptedNRIC != null)
+{
+    <p><strong>NRIC:</strong> @Model.DecryptedNRIC</p>
+}
+else
+{
+    <p>No NRIC found.</p>
+}
+
+@if (Model.DateOfBirth != DateTime.MinValue)
+{
+    <p><strong>Date of Birth:</strong> @Model.DateOfBirth.ToShortDateString()</p>
+}
+else
+{
+    <p>No Date of Birth found.</p>
+}
+
+@if (Model.WhoAmI != null)
+{
+    <p><strong>Who Am I:</strong> @Model.WhoAmI</p>
+}
+else
+{
+    <p>No information found.</p>
+}
+
+<!-- Button to Change Password -->
+<div class="mt-4">
+    <a href="/ChangePassword" class="btn btn-primary">Change Password</a>
+</div>
