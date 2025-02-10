@@ -17,7 +17,7 @@ public class ResetPasswordRequestModel : PageModel
 
     [BindProperty]
     public string Email { get; set; }
-
+    
     public void OnGet()
     {
     }
@@ -39,7 +39,9 @@ public class ResetPasswordRequestModel : PageModel
 
         // Generate the password reset token
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var resetLink = Url.Page("/ResetPassword", null, new { email = Email, token = token }, Request.Scheme);
+
+        // Create the reset link without the email
+        var resetLink = Url.Page("/ResetPassword", null, new { token = token }, Request.Scheme);
 
         // Send the email
         await _emailSender.SendEmailAsync(Email, "Reset Password", $"Please reset your password by clicking here: <a href='{resetLink}'>Reset your password</a>");
