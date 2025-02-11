@@ -64,6 +64,9 @@ namespace WebApplication1.Pages
                     return Page();
                 }
 
+                var isTwoFactorEnabled = await signInManager.UserManager.GetTwoFactorEnabledAsync(user);
+                _logger.LogInformation($"User {user.Email} 2FA Enabled: {isTwoFactorEnabled}");
+
                 // Attempt to sign in the user
                 var identityResult = await signInManager.PasswordSignInAsync(LModel.Email, LModel.Password, LModel.RememberMe, false);
                 if (identityResult.Succeeded)
@@ -71,13 +74,26 @@ namespace WebApplication1.Pages
                     // Check if the user has 2FA enabled
                     if (user != null && await signInManager.UserManager.GetTwoFactorEnabledAsync(user))
                     {
+                        // Generate the 2FA code
                         var code = await signInManager.UserManager.GenerateTwoFactorTokenAsync(user, "Email");
+
+                        // Log the generated code for debugging (remove in production)
+                        _logger.LogInformation($"Generated 2FA code: {code}");
+
+                        // Store the code in TempData
+                        TempData["TwoFactorCode"] = code;
+                        TempData["TwoFactorCodeExpiration"] = DateTime.UtcNow.AddMinutes(5); // Set expiration time
+
+                        // Send the 2FA code via email
                         await emailSender.SendEmailAsync(LModel.Email, "Your 2FA Code", $"Your code is: {code}");
+
+                        // Redirect to the 2FA verification page
                         return RedirectToPage("VerifyTwoFactor", new { email = LModel.Email });
                     }
+                
 
-                    // Log successful login
-                    await auditService.LogUserActivity(user.UserName, "User  logged in successfully.");
+                // Log successful login
+                await auditService.LogUserActivity(user.UserName, "User  logged in successfully.");
 
                     // Generate a new session ID
                     var newSessionId = Guid.NewGuid().ToString();

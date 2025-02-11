@@ -33,6 +33,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<AuthDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddScoped<IPasswordValidator<ApplicationUser>, CustomPasswordValidator>();
+
 // Register the EncryptionService with a secure key
 builder.Services.AddSingleton<EncryptionService>(provider =>
     new EncryptionService("eW91ci0zMi1jaGFyLWtleS1oZXJlICAgICAgICAgICA=")); // Replace with your actual key

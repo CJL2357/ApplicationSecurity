@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Threading.Tasks;
 using WebApplication1.Model;
+using Microsoft.EntityFrameworkCore; // For DbContext operations
 
 public class ResetPasswordModel : PageModel
 {
@@ -71,10 +72,36 @@ public class ResetPasswordModel : PageModel
             return Page();
         }
 
+        // Check if the new password is in the password history
+        var passwordHistory = await _context.PasswordHistories
+            .Where(ph => ph.UserId == user.Id)
+            .OrderByDescending(ph => ph.CreatedAt)
+            .Take(2)
+            .ToListAsync();
+
+        foreach (var history in passwordHistory)
+        {
+            if (_userManager.PasswordHasher.VerifyHashedPassword(user, history.PasswordHash, NewPassword) != PasswordVerificationResult.Failed)
+            {
+                ModelState.AddModelError(string.Empty, "Cannot reuse old password.");
+                return Page();
+            }
+        }
+
         // Reset the password
         var result = await _userManager.ResetPasswordAsync(user, resetToken.Token, NewPassword);
         if (result.Succeeded)
         {
+            // Store the new password in password history
+            var passwordHistoryEntry = new PasswordHistory
+            {
+                UserId = user.Id,
+                PasswordHash = _userManager.PasswordHasher.HashPassword(user, NewPassword),
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.PasswordHistories.Add(passwordHistoryEntry);
+            await _context.SaveChangesAsync(); // Save the password history entry
+
             // Optionally, remove the token from the database after successful reset
             _context.PasswordResetTokens.Remove(resetToken);
             await _context.SaveChangesAsync();

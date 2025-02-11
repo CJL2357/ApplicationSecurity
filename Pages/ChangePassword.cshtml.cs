@@ -6,16 +6,19 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WebApplication1.Model;
 using WebApplication1.ViewModels;
+using Microsoft.EntityFrameworkCore; // For DbContext
 
 namespace WebApplication1.Pages
 {
     public class ChangePasswordModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly AuthDbContext _context; // Add this line
 
-        public ChangePasswordModel(UserManager<ApplicationUser> userManager)
+        public ChangePasswordModel(UserManager<ApplicationUser> userManager, AuthDbContext context)
         {
             _userManager = userManager;
+            _context = context; // Initialize the DbContext
         }
 
         [BindProperty]
@@ -62,6 +65,22 @@ namespace WebApplication1.Pages
                 return Page();
             }
 
+            // Check if the new password is in the password history
+            var passwordHistory = await _context.PasswordHistories
+                .Where(ph => ph.UserId == user.Id)
+                .OrderByDescending(ph => ph.CreatedAt)
+                .Take(2)
+                .ToListAsync();
+
+            foreach (var history in passwordHistory)
+            {
+                if (_userManager.PasswordHasher.VerifyHashedPassword(user, history.PasswordHash, Model.NewPassword) != PasswordVerificationResult.Failed)
+                {
+                    ModelState.AddModelError(string.Empty, "Cannot reuse old password.");
+                    return Page();
+                }
+            }
+
             // Change the password
             var result = await _userManager.ChangePasswordAsync(user, Model.CurrentPassword, Model.NewPassword);
             if (result.Succeeded)
@@ -70,6 +89,16 @@ namespace WebApplication1.Pages
                 user.LastPasswordChangeDate = DateTime.UtcNow;
                 user.PasswordExpirationDate = DateTime.UtcNow.AddDays(MaximumPasswordAgeDays);
                 await _userManager.UpdateAsync(user); // Save changes to the user
+
+                // Store the new password in password history
+                var passwordHistoryEntry = new PasswordHistory
+                {
+                    UserId = user.Id,
+                    PasswordHash = _userManager.PasswordHasher.HashPassword(user, Model.NewPassword),
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.PasswordHistories.Add(passwordHistoryEntry);
+                await _context.SaveChangesAsync(); // Save the password history entry
 
                 return RedirectToPage("Index"); // Redirect to a success page or home
             }
