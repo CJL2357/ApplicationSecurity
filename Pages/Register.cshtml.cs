@@ -39,18 +39,18 @@ namespace WebApplication1.Pages
         {
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser() // Use ApplicationUser  instead of IdentityUser     
+                var user = new ApplicationUser()
                 {
                     UserName = RModel.Email,
                     Email = RModel.Email,
-                    FirstName = RModel.FirstName, // Set additional properties
+                    FirstName = RModel.FirstName,
                     LastName = RModel.LastName,
                     Gender = RModel.Gender,
-                    // Encrypt the NRIC before saving
                     NRIC = encryptionService.Encrypt(RModel.NRIC),
                     DateOfBirth = RModel.DateOfBirth,
                     WhoAmI = RModel.WhoAmI,
-                    CurrentSessionId = string.Empty // Initialize the session ID
+                    CurrentSessionId = string.Empty,
+                    ResumeFilePath = string.Empty // Set a default value
                 };
 
                 // Hash the password with salt
@@ -87,17 +87,23 @@ namespace WebApplication1.Pages
                         {
                             await RModel.Resume.CopyToAsync(stream);
                         }
+
+                        // Save the file path to the user object
+                        user.ResumeFilePath = $"/uploads/{RModel.Resume.FileName}"; // Store the relative path
                     }
 
-                    // Redirect to the login page instead of the home page
-                    return RedirectToPage("/Login"); // Change this line to redirect to the login page
+                    // Update the user with the resume file path
+                    await userManager.UpdateAsync(user);
+
+                    // Redirect to the login page
+                    return RedirectToPage("/Login");
                 }
                 else
                 {
                     foreach (var error in result.Errors)
                     {
                         ModelState.AddModelError("", error.Description);
-                        logger.LogError("Registration error: {Error}", error.Description); // Log the error
+                        logger.LogError("Registration error: {Error}", error.Description);
                     }
                 }
             }

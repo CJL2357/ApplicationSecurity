@@ -25,6 +25,8 @@ namespace WebApplication1.Pages
         public DateTime DateOfBirth { get; set; }
         public string WhoAmI { get; set; }
 
+        public string ResumeFilePath { get; set; } // New property for resume file path
+
         public IndexModel(ILogger<IndexModel> logger, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, EncryptionService encryptionService)
         {
             _logger = logger;
@@ -76,6 +78,7 @@ namespace WebApplication1.Pages
                 Gender = user.Gender;
                 DateOfBirth = user.DateOfBirth;
                 WhoAmI = user.WhoAmI;
+                ResumeFilePath = user.ResumeFilePath; // Get the resume file path
             }
             else
             {

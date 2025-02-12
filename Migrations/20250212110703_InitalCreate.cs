@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WebApplication1.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitalCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,6 +37,7 @@ namespace WebApplication1.Migrations
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
                     WhoAmI = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CurrentSessionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ResumeFilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastPasswordChangeDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     PasswordExpirationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),

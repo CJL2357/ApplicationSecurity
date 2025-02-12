@@ -60,6 +60,15 @@ else
     <p>No information found.</p>
 }
 
+@if (!string.IsNullOrEmpty(Model.ResumeFilePath))
+{
+    <p><strong>Resume:</strong> <a href="@Model.ResumeFilePath" target="_blank">Download Resume</a></p>
+}
+else
+{
+    <p>No resume found.</p>
+}
+
 <!-- Button to Change Password -->
 <div class="mt-4">
     <a href="/ChangePassword" class="btn btn-primary">Change Password</a>

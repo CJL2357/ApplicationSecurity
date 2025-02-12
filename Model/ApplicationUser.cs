@@ -12,6 +12,7 @@ namespace WebApplication1.Model
         public DateTime DateOfBirth { get; set; }
         public string WhoAmI { get; set; }
         public string CurrentSessionId { get; set; } = string.Empty; // Store the current session ID
+        public string ResumeFilePath { get; set; } // Store the file path of the resume
 
         public virtual ICollection<PasswordHistory> PasswordHistories { get; set; }
 
